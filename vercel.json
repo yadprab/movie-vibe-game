@@ -6,6 +6,8 @@
     }
   ],
   "env": {
-    "VITE_OMDB_API_KEY": "${VITE_OMDB_API_KEY}"
-  }
+    "VITE_OMDB_API_KEY": "@omdb_api_key"
+  },
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist"
 }
