@@ -8,10 +8,11 @@ interface MovieGuessInputProps {
   disabled?: boolean;
   attemptsLeft: number;
   movieTitle?: string;
+  correctLetters?: string[];
 }
 
 const MovieGuessInput = forwardRef<LetterInputRef, MovieGuessInputProps>(
-  ({ onGuess, disabled = false, attemptsLeft, movieTitle = "" }, ref) => {
+  ({ onGuess, disabled = false, attemptsLeft, movieTitle = "", correctLetters = [] }, ref) => {
     const letterInputRef = useRef<LetterInputRef>(null);
     const titleRef = useRef<HTMLSpanElement>(null);
 
@@ -36,6 +37,13 @@ const MovieGuessInput = forwardRef<LetterInputRef, MovieGuessInputProps>(
       }
     }, []);
 
+    // Prefill correct letters when they change
+    useEffect(() => {
+      if (letterInputRef.current && movieTitle && correctLetters.length > 0) {
+        letterInputRef.current.prefillCorrectLetters(movieTitle, correctLetters);
+      }
+    }, [correctLetters, movieTitle]);
+
     // Forward the ref to the parent component
     useImperativeHandle(ref, () => ({
       clear: () => {
@@ -48,6 +56,11 @@ const MovieGuessInput = forwardRef<LetterInputRef, MovieGuessInputProps>(
           letterInputRef.current.setLetterStates(states);
         }
       },
+      prefillCorrectLetters: (title, letters) => {
+        if (letterInputRef.current) {
+          letterInputRef.current.prefillCorrectLetters(title, letters);
+        }
+      }
     }));
 
     const handleGuessComplete = (guess: string) => {
@@ -56,7 +69,7 @@ const MovieGuessInput = forwardRef<LetterInputRef, MovieGuessInputProps>(
       onGuess(guess.trim());
     };
 
-    // Calculate the average movie title length or use a default
+    // Calculate the length based on only letters in the movie title
     const guessLength = movieTitle
       ? movieTitle.replace(/[^a-zA-Z]/g, "").length
       : 10;
@@ -93,6 +106,17 @@ const MovieGuessInput = forwardRef<LetterInputRef, MovieGuessInputProps>(
                 disabled={disabled}
               />
             </div>
+
+            {correctLetters.length > 0 && (
+              <div className="mb-4 p-3 rounded-lg bg-primary/10 border border-primary/20">
+                <p className="text-sm font-medium">
+                  Discovered letters: {" "}
+                  <span className="font-bold">
+                    {correctLetters.map(letter => letter.toUpperCase()).join(", ")}
+                  </span>
+                </p>
+              </div>
+            )}
 
             <div className="mt-4 text-sm p-4 rounded-lg bg-secondary/30">
               {disabled ? (

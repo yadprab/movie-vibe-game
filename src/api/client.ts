@@ -1,26 +1,18 @@
 import ky from "ky";
 
-// OMDB API base URL
-const API_URL = "https://www.omdbapi.com/";
+// Use a local API endpoint instead of directly calling OMDB
+// This prevents exposing the API key and movie title in client-side requests
+const API_URL = "/api/movies";
 
-// Get API key from environment variable
-const API_KEY = import.meta.env.VITE_OMDB_API_KEY || "YOUR_OMDB_API_KEY";
-
-// Create a ky instance with the base URL and default parameters
+// Create a ky instance with the base URL
 export const apiClient = ky.extend({
   prefixUrl: API_URL,
-  searchParams: {
-    apikey: API_KEY,
-  },
   timeout: 30000,
   retry: 1,
+  // The API key is added by the Vite proxy, so we don't need to include it here
 });
 
-// Function to set API key at runtime
-export const setApiKey = (key: string) => {
-  apiClient.extend({
-    searchParams: {
-      apikey: key,
-    },
-  }) as unknown;
+// Function to set API key at runtime (no longer needed but kept for compatibility)
+export const setApiKey = () => {
+  console.log("API key setting is handled server-side now");
 };

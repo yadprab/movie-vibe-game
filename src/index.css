@@ -244,14 +244,16 @@ button:hover, .button:hover {
 
 /* Wordle-style input grid with cleaner styling */
 .letter-input-grid {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(3rem, 3rem));
+  grid-gap: 0.5rem;
   justify-content: center;
-  gap: 0.5rem;
   padding: 1rem;
   margin: 0.5rem 0;
   background: rgba(0, 0, 0, 0.3);
   border-radius: 0.75rem;
+  max-width: 100%;
+  overflow-x: auto;
 }
 
 .letter-input-wrapper {
@@ -314,6 +316,47 @@ button:hover, .button:hover {
   box-shadow: 
     0 0 10px hsl(var(--muted) / 0.3),
     0 0 15px hsl(var(--muted) / 0.2);
+}
+
+.letter-input.prefilled {
+  background: rgba(0, 0, 0, 0.8);
+  border-color: hsl(var(--accent));
+  color: hsl(var(--accent));
+  font-weight: 700;
+  box-shadow: 
+    0 0 10px hsl(var(--accent) / 0.6),
+    0 0 20px hsl(var(--accent) / 0.3);
+  transform: scale(1.05);
+  position: relative;
+  z-index: 5;
+}
+
+.letter-input.prefilled::after {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  border-radius: 0.5rem;
+  background: linear-gradient(45deg, hsl(var(--accent) / 0.3), transparent);
+  z-index: -1;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 0.5;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.1);
+  }
+  100% {
+    opacity: 0.5;
+    transform: scale(1);
+  }
 }
 
 /* Layout styles */
@@ -454,4 +497,34 @@ td {
     0 0 15px hsl(var(--accent) / 0.5);
   transform: translateY(-2px);
   transition: all 0.2s ease;
+}
+
+/* Reddit-style spoiler effect */
+.spoiler {
+  display: inline-block;
+  background-color: rgba(0, 0, 0, 0.8);
+  color: transparent;
+  padding: 0 4px;
+  border-radius: 3px;
+  position: relative;
+  margin: 0 2px;
+  border: 1px solid hsl(var(--primary) / 0.3);
+  box-shadow: 0 0 5px hsl(var(--primary) / 0.3);
+  user-select: none;
+}
+
+.spoiler::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(45deg, 
+    hsl(var(--primary) / 0.1),
+    hsl(var(--secondary) / 0.1),
+    hsl(var(--accent) / 0.1)
+  );
+  opacity: 0.5;
+  pointer-events: none;
 }

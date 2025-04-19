@@ -5,6 +5,7 @@ export type LetterState = 'idle' | 'correct' | 'present' | 'absent';
 export interface LetterInputRef {
   setLetterStates: (states: LetterState[]) => void;
   clear: () => void;
+  prefillCorrectLetters: (movieTitle: string, correctLetters: string[]) => void;
 }
 
 interface LetterInputProps {
@@ -20,6 +21,7 @@ const LetterInput = forwardRef<LetterInputRef, LetterInputProps>(({
 }, ref) => {
   const [letters, setLetters] = useState<string[]>(Array(length).fill(''));
   const [letterStates, setLetterStates] = useState<LetterState[]>(Array(length).fill('idle'));
+  const [prefilled, setPrefilled] = useState<boolean[]>(Array(length).fill(false));
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   // Initialize inputRefs array
@@ -42,11 +44,12 @@ const LetterInput = forwardRef<LetterInputRef, LetterInputProps>(({
     if (disabled) {
       setLetters(Array(length).fill(''));
       setLetterStates(Array(length).fill('idle'));
+      setPrefilled(Array(length).fill(false));
     }
   }, [disabled, length]);
 
   const handleChange = (index: number, value: string) => {
-    if (disabled) return;
+    if (disabled || prefilled[index]) return;
 
     // Only accept letters
     if (!/^[a-zA-Z]*$/.test(value)) return;
@@ -57,8 +60,12 @@ const LetterInput = forwardRef<LetterInputRef, LetterInputProps>(({
     setLetters(newLetters);
 
     // Move to the next input if a letter was entered
-    if (value && index < length - 1 && inputRefs.current[index + 1]) {
-      inputRefs.current[index + 1]?.focus();
+    if (value && index < length - 1) {
+      // Find the next non-prefilled input
+      const nextIndex = findNextEmptyIndex(index + 1);
+      if (nextIndex !== -1 && inputRefs.current[nextIndex]) {
+        inputRefs.current[nextIndex]?.focus();
+      }
     }
 
     // Check if all letters are filled
@@ -68,22 +75,49 @@ const LetterInput = forwardRef<LetterInputRef, LetterInputProps>(({
     }
   };
 
+  const findNextEmptyIndex = (startIndex: number): number => {
+    for (let i = startIndex; i < length; i++) {
+      if (!prefilled[i]) {
+        return i;
+      }
+    }
+    return -1;
+  };
+
+  const findPrevEmptyIndex = (startIndex: number): number => {
+    for (let i = startIndex; i >= 0; i--) {
+      if (!prefilled[i]) {
+        return i;
+      }
+    }
+    return -1;
+  };
+
   const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (disabled) return;
+    if (disabled || prefilled[index]) return;
 
     // Move to the previous input on backspace if current input is empty
-    if (e.key === 'Backspace' && !letters[index] && index > 0 && inputRefs.current[index - 1]) {
-      inputRefs.current[index - 1]?.focus();
+    if (e.key === 'Backspace' && !letters[index] && index > 0) {
+      const prevIndex = findPrevEmptyIndex(index - 1);
+      if (prevIndex !== -1 && inputRefs.current[prevIndex]) {
+        inputRefs.current[prevIndex]?.focus();
+      }
     }
 
     // Move to the next input on right arrow key
-    if (e.key === 'ArrowRight' && index < length - 1 && inputRefs.current[index + 1]) {
-      inputRefs.current[index + 1]?.focus();
+    if (e.key === 'ArrowRight' && index < length - 1) {
+      const nextIndex = findNextEmptyIndex(index + 1);
+      if (nextIndex !== -1 && inputRefs.current[nextIndex]) {
+        inputRefs.current[nextIndex]?.focus();
+      }
     }
 
     // Move to the previous input on left arrow key
-    if (e.key === 'ArrowLeft' && index > 0 && inputRefs.current[index - 1]) {
-      inputRefs.current[index - 1]?.focus();
+    if (e.key === 'ArrowLeft' && index > 0) {
+      const prevIndex = findPrevEmptyIndex(index - 1);
+      if (prevIndex !== -1 && inputRefs.current[prevIndex]) {
+        inputRefs.current[prevIndex]?.focus();
+      }
     }
   };
 
@@ -98,15 +132,18 @@ const LetterInput = forwardRef<LetterInputRef, LetterInputProps>(({
     const newLetters = [...letters];
     
     // Fill as many letters as possible from the pasted text
-    for (let i = 0; i < Math.min(pastedText.length, length); i++) {
-      newLetters[i] = pastedText[i];
+    let pasteIndex = 0;
+    for (let i = 0; i < length; i++) {
+      if (!prefilled[i] && pasteIndex < pastedText.length) {
+        newLetters[i] = pastedText[pasteIndex++];
+      }
     }
     
     setLetters(newLetters);
 
     // Focus the next empty input or the last input
-    const nextEmptyIndex = newLetters.findIndex(letter => !letter);
-    if (nextEmptyIndex !== -1 && nextEmptyIndex < length && inputRefs.current[nextEmptyIndex]) {
+    const nextEmptyIndex = findNextEmptyIndex(0);
+    if (nextEmptyIndex !== -1 && inputRefs.current[nextEmptyIndex]) {
       inputRefs.current[nextEmptyIndex]?.focus();
     } else if (inputRefs.current[length - 1]) {
       inputRefs.current[length - 1]?.focus();
@@ -119,6 +156,60 @@ const LetterInput = forwardRef<LetterInputRef, LetterInputProps>(({
     }
   };
 
+  // Prefill correct letters in their positions
+  const prefillCorrectLetters = (movieTitle: string, correctLetters: string[]) => {
+    if (!movieTitle || correctLetters.length === 0) return;
+    
+    // Normalize the movie title - only keep letters (no spaces or special characters)
+    const normalizedTitle = movieTitle.toUpperCase().replace(/[^A-Z]/g, '');
+    const titleLetters = normalizedTitle.split('');
+    
+    const newLetters = [...letters];
+    const newPrefilled = [...prefilled];
+    
+    // First, clear any non-prefilled positions
+    for (let i = 0; i < length; i++) {
+      if (!newPrefilled[i]) {
+        newLetters[i] = '';
+      }
+    }
+    
+    // Only prefill letters that are in the correct position
+    for (let i = 0; i < Math.min(titleLetters.length, length); i++) {
+      const letter = titleLetters[i];
+      
+      // If the letter is in the correctLetters array AND it's in the correct position
+      if (correctLetters.includes(letter.toLowerCase())) {
+        // Check if this is an exact match (correct position)
+        const letterLower = letter.toLowerCase();
+        const normalizedTitleLower = normalizedTitle.toLowerCase();
+        
+        // Find all occurrences of this letter in the title
+        const positions: number[] = [];
+        for (let j = 0; j < normalizedTitleLower.length; j++) {
+          if (normalizedTitleLower[j] === letterLower) {
+            positions.push(j);
+          }
+        }
+        
+        // If this position is one of the correct positions for this letter
+        if (positions.includes(i)) {
+          newLetters[i] = letter;
+          newPrefilled[i] = true;
+        }
+      }
+    }
+    
+    setLetters(newLetters);
+    setPrefilled(newPrefilled);
+    
+    // Focus the first empty input
+    const nextEmptyIndex = findNextEmptyIndex(0);
+    if (nextEmptyIndex !== -1 && inputRefs.current[nextEmptyIndex]) {
+      inputRefs.current[nextEmptyIndex]?.focus();
+    }
+  };
+
   // Expose methods to parent component
   useImperativeHandle(ref, () => ({
     setLetterStates: (states: LetterState[]) => {
@@ -127,10 +218,12 @@ const LetterInput = forwardRef<LetterInputRef, LetterInputProps>(({
     clear: () => {
       setLetters(Array(length).fill(''));
       setLetterStates(Array(length).fill('idle'));
+      setPrefilled(Array(length).fill(false));
       if (inputRefs.current[0]) {
         inputRefs.current[0]?.focus();
       }
-    }
+    },
+    prefillCorrectLetters
   }));
 
   return (
@@ -145,8 +238,8 @@ const LetterInput = forwardRef<LetterInputRef, LetterInputProps>(({
             onChange={e => handleChange(index, e.target.value)}
             onKeyDown={e => handleKeyDown(index, e)}
             onPaste={handlePaste}
-            disabled={disabled}
-            className={`letter-input ${letterStates[index] !== 'idle' ? letterStates[index] : ''}`}
+            disabled={disabled || prefilled[index]}
+            className={`letter-input ${letterStates[index] !== 'idle' ? letterStates[index] : ''} ${prefilled[index] ? 'prefilled' : ''}`}
             aria-label={`Letter ${index + 1}`}
           />
         </div>
