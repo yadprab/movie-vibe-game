@@ -1,0 +1,11 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/movies",
+      "destination": "https://www.omdbapi.com"
+    }
+  ],
+  "env": {
+    "VITE_OMDB_API_KEY": "${VITE_OMDB_API_KEY}"
+  }
+}
