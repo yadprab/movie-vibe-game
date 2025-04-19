@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { loadImage, initCanvas, CanvasConfig } from '../utils/canvasUtils';
-import { animatePosterReveal } from '../utils/animationUtils';
+import { animatePosterReveal, createPosterEntranceAnimation } from '../utils/animationUtils';
 
 interface MoviePosterProps {
   posterUrl: string;
@@ -14,9 +14,11 @@ const MoviePoster: React.FC<MoviePosterProps> = ({
   className = ''
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const [posterImage, setPosterImage] = useState<HTMLImageElement | null>(null);
   const [currentPercentage, setCurrentPercentage] = useState(revealPercentage);
   const prevPercentageRef = useRef(revealPercentage);
+  const [hasAnimated, setHasAnimated] = useState(false);
 
   // Load the poster image when the URL changes
   useEffect(() => {
@@ -44,8 +46,14 @@ const MoviePoster: React.FC<MoviePosterProps> = ({
       };
       
       initCanvas(config);
+      
+      // Apply entrance animation when poster is first loaded
+      if (!hasAnimated && containerRef.current) {
+        createPosterEntranceAnimation(containerRef.current);
+        setHasAnimated(true);
+      }
     }
-  }, [posterImage, currentPercentage]);
+  }, [posterImage, currentPercentage, hasAnimated]);
 
   // Animate the reveal when the percentage changes
   useEffect(() => {
@@ -68,7 +76,14 @@ const MoviePoster: React.FC<MoviePosterProps> = ({
   }, [revealPercentage, posterImage]);
 
   return (
-    <div className={`relative overflow-hidden rounded-lg shadow-lg ${className}`}>
+    <div 
+      ref={containerRef}
+      className={`relative overflow-hidden rounded-lg shadow-lg ${className}`}
+      style={{
+        border: '3px solid rgba(192, 192, 192, 0.8)',
+        boxShadow: '0 0 15px rgba(192, 192, 192, 0.5), 0 0 30px rgba(192, 192, 192, 0.3)',
+      }}
+    >
       {!posterImage && (
         <div className="absolute inset-0 flex items-center justify-center bg-card">
           <div className="h-16 w-16 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>

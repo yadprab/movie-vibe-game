@@ -1,4 +1,20 @@
 import confetti from 'canvas-confetti';
+import { animate } from 'animejs';
+
+/**
+ * Create an entrance animation for the movie poster
+ * @param element The element to animate
+ */
+export const createPosterEntranceAnimation = (element: HTMLElement) => {
+  // Use anime.js to create a tween animation as shown in the documentation
+  animate(element, {
+    opacity: [0, 1],
+    translateY: [50, 0],
+    scale: [0.8, 1],
+    duration: 1200,
+    easing: 'easeOutExpo',
+  });
+};
 
 /**
  * Animate the poster reveal with a smooth transition
