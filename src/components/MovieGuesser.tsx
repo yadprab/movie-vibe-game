@@ -1,9 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useRandomMovie } from '../queries/movieQueries';
 import MoviePoster from './MoviePoster';
 import MovieGuessInput from './MovieGuessInput';
+import { Card, CardContent } from './ui/card';
 import { Button } from './ui/button';
 import { triggerConfetti, animateSuccess } from '../utils/animationUtils';
+import { LetterInputRef } from './LetterInput';
 
 const MAX_ATTEMPTS = 3;
 const REVEAL_PERCENTAGES = [30, 60, 100]; // Reveal percentages for each attempt
@@ -13,6 +15,7 @@ const MovieGuesser: React.FC = () => {
   const [gameStatus, setGameStatus] = useState<'playing' | 'won' | 'lost'>('playing');
   const [revealPercentage, setRevealPercentage] = useState<number>(REVEAL_PERCENTAGES[0]);
   const [message, setMessage] = useState<string>('');
+  const letterInputRef = useRef<LetterInputRef>(null);
   
   const { 
     data: movie, 
@@ -69,77 +72,89 @@ const MovieGuesser: React.FC = () => {
 
   const handleNewGame = () => {
     refetch();
+    if (letterInputRef.current) {
+      letterInputRef.current.clear();
+    }
   };
 
   if (isLoading) {
     return (
-      <div className="flex h-full w-full items-center justify-center">
-        <div className="h-16 w-16 animate-spin rounded-full border-4 border-electric-lavender border-t-transparent"></div>
+      <div className="flex h-full w-full items-center justify-center min-h-[400px]">
+        <div className="h-16 w-16 animate-spin rounded-full border-4 border-primary border-t-transparent neon-border"></div>
       </div>
     );
   }
 
   if (isError || !movie) {
     return (
-      <div className="flex h-full w-full flex-col items-center justify-center space-y-4 text-center">
-        <h2 className="text-xl font-bold text-holographic-silver">
+      <div className="flex h-full w-full flex-col items-center justify-center space-y-4 text-center min-h-[400px] glass-card p-8">
+        <h2 className="text-xl font-bold text-foreground neon-text">
           Failed to load movie data
         </h2>
-        <p className="text-holographic-silver/70">
+        <p className="text-foreground/70">
           There was an error loading the movie. Please try again.
         </p>
-        <Button onClick={handleNewGame}>Try Again</Button>
+        <Button onClick={handleNewGame} className="mt-4 neon-border">Try Again</Button>
       </div>
     );
   }
 
   return (
-    <div className="flex w-full flex-col space-y-8">
-      <div className="rounded-lg bg-dark-matter p-6 shadow-lg">
-        <h2 className="mb-4 text-xl font-bold text-holographic-silver">Movie Plot</h2>
-        <p className="text-holographic-silver/90">{movie.Plot}</p>
+    <div className="movie-guesser-layout">
+      <div className="movie-poster-container">
+        <MoviePoster 
+          posterUrl={movie.Poster} 
+          revealPercentage={revealPercentage}
+          className="movie-poster glass-card"
+        />
       </div>
       
-      <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
-        <div className="order-2 md:order-1">
-          <MoviePoster 
-            posterUrl={movie.Poster} 
-            revealPercentage={revealPercentage}
-            className="movie-poster"
-          />
-        </div>
-        
-        <div className="order-1 flex flex-col space-y-6 md:order-2">
-          <div className="rounded-lg bg-dark-matter p-6 shadow-lg">
-            <MovieGuessInput 
-              onGuess={handleGuess} 
-              disabled={gameStatus !== 'playing'}
-              attemptsLeft={MAX_ATTEMPTS - attempts}
-            />
-          </div>
-          
-          {message && (
-            <div className={`rounded-lg p-4 text-center ${
-              gameStatus === 'won' 
-                ? 'bg-neon-violet/20 text-cyberpunk-pink' 
-                : gameStatus === 'lost' 
-                  ? 'bg-red-500/20 text-red-300' 
-                  : 'bg-cosmic-glow/20 text-holographic-silver'
-            }`}>
-              {message}
+      <div className="movie-content">
+        <Card className="glass-card mb-6">
+          <CardContent className="p-6">
+            <div className="mb-4 flex items-center">
+              <h2 className="text-xl font-bold text-foreground neon-text">Movie Plot</h2>
+              {movie.Year && (
+                <span className="ml-auto badge px-3 py-1 text-sm">
+                  <span className="text-foreground/80">Year: </span>
+                  <span className="font-semibold text-accent ml-1">{movie.Year}</span>
+                </span>
+              )}
             </div>
-          )}
-          
-          {gameStatus !== 'playing' && (
-            <Button 
-              onClick={handleNewGame}
-              className="w-full"
-              variant={gameStatus === 'won' ? 'default' : 'secondary'}
-            >
-              Play Again
-            </Button>
-          )}
-        </div>
+            <div className="bg-black/40 p-4 rounded-lg glass">
+              <p className="text-foreground/90 leading-relaxed">{movie.Plot}</p>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <MovieGuessInput 
+          onGuess={handleGuess} 
+          disabled={gameStatus !== 'playing'}
+          attemptsLeft={MAX_ATTEMPTS - attempts}
+          movieTitle={movie.Title}
+        />
+        
+        {message && (
+          <div className={`mt-6 rounded-lg p-5 text-center glass ${
+            gameStatus === 'won' 
+              ? 'bg-primary/10 text-primary border border-primary/20 neon-border' 
+              : gameStatus === 'lost' 
+                ? 'bg-destructive/10 text-destructive-foreground border border-destructive/20' 
+                : 'bg-secondary/10 text-secondary-foreground border border-secondary/20'
+          }`}>
+            <p className={`font-medium ${gameStatus === 'won' ? 'neon-text' : ''}`}>{message}</p>
+          </div>
+        )}
+        
+        {gameStatus !== 'playing' && (
+          <Button 
+            onClick={handleNewGame}
+            className="mt-6 w-full py-6 text-lg font-semibold neon-border"
+            variant={gameStatus === 'won' ? 'default' : 'secondary'}
+          >
+            Play Again
+          </Button>
+        )}
       </div>
     </div>
   );

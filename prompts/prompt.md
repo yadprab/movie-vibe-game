@@ -29,6 +29,14 @@
 - Create poster reveal percentage calculation
 - Implement win/lose state handling
 
+## UI Improvements
+- Use shadcn/ui components throughout the UI
+- Enable shadcn dark mode with custom color palette
+- Apply glassmorphism style for modern, soft transparency effects
+- Make each letter of the guess a separate input field, styled like Wordle
+- Remove submit button - guessing happens automatically
+- Use CSS Grid for improved layout structure
+
 ## Finalization
 - Add comprehensive README
 - Fix TypeScript and linting issues

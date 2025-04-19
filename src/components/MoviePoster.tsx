@@ -70,13 +70,13 @@ const MoviePoster: React.FC<MoviePosterProps> = ({
   return (
     <div className={`relative overflow-hidden rounded-lg shadow-lg ${className}`}>
       {!posterImage && (
-        <div className="absolute inset-0 flex items-center justify-center bg-dark-matter">
-          <div className="h-16 w-16 animate-spin rounded-full border-4 border-electric-lavender border-t-transparent"></div>
+        <div className="absolute inset-0 flex items-center justify-center bg-card">
+          <div className="h-16 w-16 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
         </div>
       )}
       <canvas 
         ref={canvasRef} 
-        className="max-h-[500px] w-full object-contain"
+        className="w-full h-full object-contain"
         style={{ display: posterImage ? 'block' : 'none' }}
       />
     </div>
